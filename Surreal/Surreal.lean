@@ -117,6 +117,17 @@ theorem xL_x_xR : ∀ (x : Surreal),
       have h : le y_r y_r := by exact x_le_x y_r
       contradiction
 
+theorem totality : ∀ (x y : Surreal), x.le y ∨ y.le x := by
+  sorry
+
+theorem left_removal_IsSurreal
+    (x : Surreal) (l : Game) : IsSurreal (x.val.remove_left l) := by
+    sorry
+
+theorem right_removal_IsSurreal
+    (x : Surreal) (r : Game) : IsSurreal (x.val.remove_right l) := by
+    sorry
+
 
 theorem like_eq : ∀ (x y : Surreal),
   (∀ xl ∈ x.left, ∃ yl ∈ y.left, eq xl yl) ∧
@@ -160,3 +171,11 @@ theorem like_eq : ∀ (x y : Surreal),
       have yr_le_y := le_trans yr xr y ⟨h_eq.2, h_le⟩
       have yr_nleq_y := ((xL_x_xR y).2 yr h_yr).2
       contradiction
+
+theorem simplicity_left (x : Surreal) (l l' : Game)
+  (hl : l ∈ x.left) (hl' : l' ∈ x.left) (h_dom : le l l') : (x.val.remove_left l).eq x := by
+  sorry
+
+theorem simplicity_right (x : Surreal) (r r' : Game)
+  (hr : r ∈ x.right) (hr' : r' ∈ x.right) (h_dom : le r' r) : (x.val.remove_right r).eq x := by
+  sorry
