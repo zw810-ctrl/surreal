@@ -1,5 +1,6 @@
 import Mathlib.Tactic.Linarith
 import Mathlib.Data.List.MinMax
+import Mathlib.Order.Basic
 import Surreal.game
 
 open Game
@@ -117,8 +118,28 @@ theorem xL_x_xR : ∀ (x : Surreal),
       have h : le y_r y_r := by exact x_le_x y_r
       contradiction
 
-theorem totality : ∀ (x y : Surreal), x.le y ∨ y.le x := by
-  sorry
+theorem totality : ∀ (x y : Surreal), Surreal.le x y ∨ Surreal.le y x := by
+  intro x y
+  rw [or_iff_not_imp_left]
+  unfold Surreal.le
+  nth_rw 1 [le]
+  intro h
+  rw [not_and_or] at h
+  push_neg at h
+  cases h with
+  | inl h_left =>
+    · -- case: ∃ y_r ∈ y.right, x ≤ y_r
+      rcases h_left with ⟨xl, h_xl, h_le⟩
+      have xl_le_x := ((xL_x_xR x).1 xl h_xl).1
+      have y_le_x := le_trans y xl x ⟨h_le, xl_le_x⟩
+      exact y_le_x
+  | inr h_right =>
+    · -- case: ∃ x_l ∈ x.left, y ≤ x_l
+      rcases h_right with ⟨yr, h_yr, h_le⟩
+      have y_le_yr := ((xL_x_xR y).2 yr h_yr).1
+      have x_le_y := le_trans y yr x ⟨y_le_yr, h_le⟩
+      exact x_le_y
+
 
 theorem left_removal_IsSurreal
     (x : Surreal) (l : Game) : IsSurreal (x.val.remove_left l) := by
