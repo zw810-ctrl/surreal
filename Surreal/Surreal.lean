@@ -140,13 +140,13 @@ theorem totality : ∀ (x y : Surreal), Surreal.le x y ∨ Surreal.le y x := by
   push_neg at h
   cases h with
   | inl h_left =>
-    · -- case: ∃ y_r ∈ y.right, x ≤ y_r
+    · -- case: ∃ xl ∈ x.left, y ≤ xl
       rcases h_left with ⟨xl, h_xl, h_le⟩
       have xl_le_x := ((xL_x_xR x).1 xl h_xl).1
       have y_le_x := le_trans y xl x ⟨h_le, xl_le_x⟩
       exact y_le_x
   | inr h_right =>
-    · -- case: ∃ x_l ∈ x.left, y ≤ x_l
+    · -- case: ∃ yr ∈ y.right, yr ≤ x
       rcases h_right with ⟨yr, h_yr, h_le⟩
       have y_le_yr := ((xL_x_xR y).2 yr h_yr).1
       have x_le_y := le_trans y yr x ⟨y_le_yr, h_le⟩
@@ -190,14 +190,12 @@ theorem Surreal.lt_trans (x y z : Surreal) :
     have h_z_not_le_y := h_yz.2
     contradiction
 
-
-
 theorem left_removal_IsSurreal
     (x : Surreal) (l : Game) : IsSurreal (x.val.remove_left l) := by
     sorry
 
 theorem right_removal_IsSurreal
-    (x : Surreal) (r : Game) : IsSurreal (x.val.remove_right l) := by
+    (x : Surreal) (r : Game) : IsSurreal (x.val.remove_right r) := by
     sorry
 
 
