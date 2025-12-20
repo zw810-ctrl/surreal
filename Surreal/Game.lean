@@ -1,5 +1,6 @@
 import Mathlib.Tactic.Linarith
 import Mathlib.Data.List.MinMax
+import Mathlib.Data.List.Basic
 import Mathlib.Order.Basic
 
 inductive Game where
@@ -170,8 +171,7 @@ theorem zero_zero'_eq : eq zero zero' := by
 def R : Game → Game → Prop := fun y x => birthday y < birthday x
 lemma wf_R : WellFounded R := InvImage.wf birthday wellFounded_lt
 
-theorem x_le_x : ∀ (x : Game), le x x := by
-  intro x
+theorem Game.le_refl (x : Game) : le x x := by
   apply wf_R.induction x
   intro x IH
   unfold le
@@ -194,8 +194,8 @@ theorem x_eq_x : ∀ (x : Game), eq x x := by
   intro x
   unfold eq
   constructor
-  · exact x_le_x x
-  · exact x_le_x x
+  · exact le_refl x
+  · exact le_refl x
 
 
 structure TriGame where
@@ -255,12 +255,31 @@ by
   apply le_trans1 tri habc
 
 
-#check [zero, one].erase zero
+#eval [zero, one].erase one
 #eval [zero, one].erase half
 
 
-def Game.remove_left (l : Game) (g : Game) : Game :=
-  mk (g.left.erase l) g.right
+def Game.remove_left (g : Game) (l : Game) : Game :=
+  mk ((g.left).erase l) g.right
 
-def Game.remove_right (r : Game) (g : Game) : Game :=
+def Game.remove_right (g : Game) (r : Game) : Game :=
   mk g.left (g.right.erase r)
+
+#eval half
+#eval half.remove_right one
+#eval half.remove_left zero
+
+lemma remove_left_eq_right (g : Game) (l : Game) :
+  (g.remove_left l).right = g.right := by
+  cases g with
+  | mk L R =>
+    simp [remove_left]
+    simp [right]
+
+lemma remove_left_subset_left (g : Game) (l : Game) :
+  (g.remove_left l).left ⊆ g.left := by
+  cases g with
+  | mk L R =>
+    simp [remove_left]
+    simp [left]
+    apply List.erase_subset
