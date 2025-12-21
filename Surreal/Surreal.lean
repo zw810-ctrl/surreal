@@ -212,7 +212,28 @@ theorem left_removal_IsSurreal
 
 theorem right_removal_IsSurreal
     (x : Surreal) (r : Game) : IsSurreal (x.val.remove_right r) := by
-    sorry
+    have h1 : (x.val.remove_right r).left = x.left := by rfl
+    have h2 : (x.val.remove_right r).right ⊆ x.right := remove_right_subset_right x.val r
+    unfold IsSurreal
+    constructor
+    · intro yl h_yl yr h_yr
+      rw [h1] at h_yl
+      apply h2 at h_yr
+      have h_surreal := (x.property)
+      unfold IsSurreal at h_surreal
+      exact h_surreal.1 yl h_yl yr h_yr
+    · constructor
+      · intro xl h_xl
+        rw [h1] at h_xl
+        have h_surreal := (x.property)
+        unfold IsSurreal at h_surreal
+        exact h_surreal.2.1 xl h_xl
+      · intro xr h_xr
+        apply h2 at h_xr
+        have h_surreal := (x.property)
+        unfold IsSurreal at h_surreal
+        exact h_surreal.2.2 xr h_xr
+
 
 lemma like_le (x y : Surreal) :
   (∀ xl ∈ x.left, ∃ yl ∈ y.left, xl.le yl) ∧
@@ -254,14 +275,14 @@ theorem simplicity_left (x : Surreal) (l l' : Game)
         apply h1 at h_yl
         exact h_yl
       · exact le_refl yl
-    · intro yr h_yr
-      use yr
+    · intro xr h_xr
+      use xr
       constructor
       · have h1 : (x.val.remove_left l).right = x.right := remove_left_eq_right x.val l
         have h2: y.right = (x.val.remove_left l).right := by rfl
         rw [h2]
-        exact h_yr
-      · exact le_refl yr
+        exact h_xr
+      · exact le_refl xr
   -- Prove `x ≤ (x.remove_left l)` by like_le
   · apply like_le x y
     constructor
@@ -292,10 +313,57 @@ theorem simplicity_left (x : Surreal) (l l' : Game)
       · exact le_refl yr
 
 theorem simplicity_right (x : Surreal) (r r' : Game)
-  (hr : r ∈ x.right) (hr' : r' ∈ x.right) (h_dom : lt r' r) : (x.val.remove_right r).eq x := by
+  (hr' : r' ∈ x.right) (h_dom : r'.lt r) : (x.val.remove_right r).eq x := by
   unfold eq
+  let y : Surreal := ⟨x.val.remove_right r, right_removal_IsSurreal x r⟩
   constructor
-  · -- Prove `(x.remove_right r) ≤ x` by like_le
-    sorry
-  · -- Prove `x ≤ (x.remove_right r)` by like_le
-    sorry
+  -- Prove `(x.remove_right r) ≤ x` by like_le
+  · apply like_le y x
+    constructor
+    · intro yl h_yl
+      use yl
+      constructor
+      · have h1 : (x.val.remove_right r).left = x.left := by rfl
+        have h2 : (x.val.remove_right r).left = y.left := by rfl
+        rw [h2] at h1
+        rw [h1.symm]
+        exact h_yl
+      · exact le_refl yl
+    · intro xr h_xr
+      by_cases h_case : xr = r
+      · -- case: xr = r, take yr = r'
+        rw [h_case]
+        use r'
+        constructor
+        · have h : r' ∈ (x.val.remove_right r).right :=
+          remove_right_dom_remains x r' r hr' h_dom
+          exact h
+        · exact h_dom.1
+      · -- case: xr ≠ r, take yr = xr
+        use xr
+        constructor
+        · have h : xr ∈ (x.val.remove_right r).right :=
+          remove_right_contains_all_but x.val xr r h_xr h_case
+          exact h
+        · exact le_refl xr
+
+  -- Prove `x ≤ (x.remove_right r)` by like_le
+  · apply like_le x y
+    constructor
+    · intro xl h_xl
+      use xl
+      constructor
+      · have h1 : (x.val.remove_right r).left = x.left := by rfl
+        have h2: y.left = (x.val.remove_right r).left := by rfl
+        rw [h2]
+        exact h_xl
+      · exact le_refl xl
+    · intro yr h_yr
+      use yr
+      constructor
+      · have h1 : (x.val.remove_right r).right ⊆ x.right := remove_right_subset_right x.val r
+        have h2 : (x.val.remove_right r).right = y.right := by rfl
+        rw [h2] at h1
+        apply h1 at h_yr
+        exact h_yr
+      · exact le_refl yr

@@ -7,7 +7,9 @@ inductive Game where
   | mk : List Game → List Game → Game
 deriving BEq, Repr
 
-instance : LawfulBEq Game := sorry
+instance : LawfulBEq Game where
+  eq_of_beq := by sorry
+  rfl := by sorry
 
 open Game
 
@@ -295,3 +297,28 @@ lemma remove_left_dom_remains (g l l' : Game) (hl' : l' ∈ g.left) (h_dom : l.l
     have h_contra := h_dom.2
     contradiction
   apply remove_left_contains_all_but g l l' hl' h_neq
+
+lemma remove_right_eq_left (g : Game) (r : Game) :
+  (g.remove_right r).left = g.left := by
+  simp [remove_right]
+  simp [left]
+
+lemma remove_right_subset_right (g : Game) (r : Game) :
+  (g.remove_right r).right ⊆ g.right := by
+  simp [right]
+  apply List.erase_subset
+
+lemma remove_right_contains_all_but (g x r : Game) (hx : x ∈ g.right) (h_neq : x ≠ r) :
+  x ∈ (g.remove_right r).right := by
+  change x ∈ g.right.erase r
+  simp [List.mem_erase_of_ne, h_neq]
+  exact hx
+
+lemma remove_right_dom_remains (g r' r : Game) (hr' : r' ∈ g.right) (h_dom : r'.lt r) :
+  r' ∈ (g.remove_right r).right := by
+  have h_neq : r' ≠ r := by
+    by_contra h_eq
+    have h : r.le r' := by rw[h_eq]; exact le_refl r
+    have h_contra := h_dom.2
+    contradiction
+  apply remove_right_contains_all_but g r' r hr' h_neq
