@@ -259,6 +259,28 @@ by
   apply le_trans1 tri habc
 
 
+theorem Game.lt_trans (x y z : Game) : x.lt y ∧ y.lt z → x.lt z := by
+  intro h
+  have h_xy := h.1
+  have h_yz := h.2
+  unfold lt
+  constructor
+  · -- Goal 1: le x z
+    have h_x_le_y := h_xy.1
+    have h_y_le_z := h_yz.1
+    apply le_trans x y z
+    exact ⟨h_x_le_y, h_y_le_z⟩
+
+  · -- Goal 2: ¬(le z x)
+    intro h_contra --assume le z x
+    have h_x_le_y := h_xy.1
+    have h_z_le_y : z.le y := by
+      apply le_trans z x y
+      exact ⟨h_contra, h_x_le_y⟩
+    have h_z_not_le_y := h_yz.2
+    contradiction
+
+
 #eval [zero, one].erase one
 #eval [zero, one].erase half
 

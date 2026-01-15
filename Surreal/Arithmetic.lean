@@ -55,7 +55,9 @@ lemma map_id_iff {α : Type} (f : α → α) (l : List α) :
   | cons h t ih => simp [ih]
 
 
-
+-------------------------------------------
+----------------- a + 0 = a----------------
+-------------------------------------------
 theorem Game.add_zero (a : Game) : Game.add a zero = a := by
   -- 1. Use the well-ordered induction method to conduct a
   -- recursive proof based on the birthday of the game.
@@ -93,7 +95,9 @@ theorem Game.add_zero (a : Game) : Game.add a zero = a := by
     · rw [map_id_iff]
       apply h_ind_R
 
-
+-------------------------------------------
+----------------- 0 + a = a----------------
+-------------------------------------------
 theorem Game.zero_add (a : Game) : Game.add zero a = a := by
   apply wf_R.induction a
   intro x IH --
@@ -137,7 +141,9 @@ lemma Game.Addlem2  (a b a' b' : Game) :
   (a'.add b').le (a.add b) → (b.le b') → (a'.le a) := by
   sorry
 
-
+-------------------------------------------
+--- Adding equal numbers give equal sum ---
+-------------------------------------------
 theorem Game.add_equal (a b a' b' : Game) :
   (a.eq a') ∧ (b.eq b') → (a.add b).eq (a'.add b') := by
   intro ⟨h1, h2⟩
@@ -147,23 +153,11 @@ theorem Game.add_equal (a b a' b' : Game) :
   · exact Game.add_le_add a b a' b' h1.1 h2.1
   · exact Game.add_le_add a' b' a b h1.2 h2.2
 
-theorem Game.add_lt (a b a' b' : Game) :
-  (a.lt a') ∧ (b.le b') → (a.add b).lt (a'.add b') := by
-  intro ⟨h1, h2⟩
-  have LE: (a.add b).le (a'.add b') := by
-   exact Game.add_le_add a b a' b' h1.1 h2
-  unfold lt
-  constructor
-  · exact Game.add_le_add a b a' b' h1.1 h2
-  · intro h_contra
-    have h_bad : a'.le a := Game.Addlem2 a b a' b' h_contra h2
-    exact h1.2 h_bad
-
-theorem Game.add_isSurreal (a b : Surreal) :
-  IsSurreal (a.val.add b.val) := by
-  sorry
 
 
+-------------------------------------------
+-------- Addition is commutative ----------
+-------------------------------------------
 theorem Game.add_comm (a b : Game) : eq (a.add b) (b.add a) := by
   induction a using wf_R.induction generalizing b
   case h x IH_x =>
@@ -277,6 +271,10 @@ lemma list_map_congr {α β : Type} (l : List α) (f g : α → β) (h : ∀ x �
     · apply h; simp
     · intro y hy; apply h; simp [hy]
 
+
+-------------------------------------------
+-------- Addition is associative ----------
+-------------------------------------------
 theorem Game.add_assoc (a b c : Game) : (a.add b).add c = a.add (b.add c) := by
   induction a using wf_R.induction generalizing b c
   case h x IH_x =>
@@ -331,6 +329,197 @@ theorem Game.add_assoc (a b c : Game) : (a.add b).add c = a.add (b.add c) := by
               rw [← IH_z zr (birthday_lt_right _ _ hzr)]
               conv_rhs => enter [1]; rw [Game.add]
 
+lemma Game.add_lt (a b a' b' : Game) :
+  (a.lt a') ∧ (b.le b') → (a.add b).lt (a'.add b') := by
+  intro ⟨h1, h2⟩
+  have LE: (a.add b).le (a'.add b') := by
+   exact Game.add_le_add a b a' b' h1.1 h2
+  unfold lt
+  constructor
+  · exact Game.add_le_add a b a' b' h1.1 h2
+  · intro h_contra
+    have h_bad : a'.le a := Game.Addlem2 a b a' b' h_contra h2
+    exact h1.2 h_bad
+
+lemma Game.add_lt2 (a b a' b' : Game) :
+  (a.le a') ∧ (b.lt b') → (a.add b).lt (a'.add b') := by
+    intro h
+    have rev : (b.add a).lt (b'.add a') := Game.add_lt b a b' a' ⟨h.2, h.1⟩
+    have comm_ab   : (a.add b).eq (b.add a) := Game.add_comm a b
+    have comm_a'b' : (b'.add a').eq (a'.add b') := Game.add_comm b' a'
+    unfold lt
+    constructor
+    · apply Game.le_trans _ (b.add a)
+      constructor
+      · exact comm_ab.1
+      · apply Game.le_trans _ (b'.add a')
+        constructor
+        · exact rev.1
+        · exact comm_a'b'.1
+    · intro h_contra
+      apply rev.2
+      apply Game.le_trans _ (a'.add b')
+      constructor
+      · exact comm_a'b'.1
+      · apply Game.le_trans _ (a.add b)
+        constructor
+        · exact h_contra
+        · exact comm_ab.1
+
+structure BiSurreal where
+  a : Surreal
+  b : Surreal
+
+def U : BiSurreal → BiSurreal → Prop :=
+  fun a b => birthday a.1 + birthday a.2  < birthday b.1 + birthday b.2
+lemma wf_U : WellFounded U :=
+  InvImage.wf (fun s : BiSurreal => birthday s.1 + birthday s.2) wellFounded_lt
+
+theorem lt_imp_not_le {x y : Game} (h : lt x y) : ¬(le y x) := h.2
+
+theorem add_isSurreal1 (x : BiSurreal) :
+  IsSurreal (x.a.val.add x.b.val) := by
+  apply wf_U.induction x
+  intro x IH
+
+  let a := x.a
+  let b := x.b
+  have sa := a.property
+  have sb := b.property
+
+  unfold Game.add
+  split
+  next AL AR BL BR ha hb =>
+  unfold IsSurreal
+  constructor
+  · intro L hL R hR
+    simp [left, right, List.mem_append] at hL hR
+    apply lt_imp_not_le
+    rcases hL with ⟨al, hal, rfl⟩ | ⟨bl, hbl, rfl⟩
+
+-- =========================================================
+-- Part 1: Left options less than Right options
+-- =========================================================
+    -- BRANCH 1: L = al + b
+    · -- Now split on where the Right option R comes from: (a_R + b) or (a + b_R)
+      rcases hR with ⟨ar, har, rfl⟩ | ⟨br, hbr, rfl⟩
+      -- Case 1.1: al + b < ar + b
+      · apply Game.add_lt
+        constructor
+        · -- al < ar (because a is Surreal)
+          have h_al_lt_a : al.lt x.a.val := by
+            have h_in : al ∈ x.a.val.left := by rw [ha]; simp [Game.left]; exact hal
+            exact (xL_x_xR x.a).1 al h_in
+          have h_a_lt_ar : x.a.val.lt ar := by
+            have h_in : ar ∈ x.a.val.right := by rw [ha]; simp [Game.right]; exact har
+            exact (xL_x_xR x.a).2 ar h_in
+          exact Game.lt_trans al x.a ar ⟨h_al_lt_a, h_a_lt_ar⟩
+        · -- b ≤ b
+          exact Game.le_refl b
+
+      -- Case 1.2: al + b < a + br
+      · apply Game.add_lt
+        constructor
+        · -- al < a → al ≤ a
+          have h_in : al ∈ x.a.val.left := by rw [ha]; simp [Game.left]; exact hal
+          exact ((xL_x_xR x.a).1 al h_in)
+        · -- b < br
+          have h_in : br ∈ x.b.val.right := by rw [hb]; simp [Game.right]; exact hbr
+          exact ((xL_x_xR x.b).2 br h_in).1
+
+    -- BRANCH 2: L = a + bl
+    · -- Now split on where the Right option R comes from
+      rcases hR with ⟨ar, har, rfl⟩ | ⟨br, hbr, rfl⟩
+
+      -- Case 2.1: a + bl < ar + b
+      · apply Game.add_lt
+        constructor
+        · -- a < ar
+          have h_in : ar ∈ x.a.val.right := by rw [ha]; simp [Game.right]; exact har
+          exact (xL_x_xR x.a).2 ar h_in
+        · -- bl < b → bl ≤ b
+          have h_in : bl ∈ x.b.val.left := by rw [hb]; simp [Game.left]; exact hbl
+          exact ((xL_x_xR x.b).1 bl h_in).1
+
+      -- Case 2.2: a + bl < a + br
+      · apply Game.add_lt2
+        constructor
+        · -- a ≤ a
+          exact Game.le_refl a
+        · -- bl < br (because b is Surreal)
+          have h_bl_lt_b : bl.lt x.b.val := by
+            have h_in : bl ∈ x.b.val.left := by rw [hb]; simp [Game.left]; exact hbl
+            exact (xL_x_xR x.b).1 bl h_in
+          have h_b_lt_br : x.b.val.lt br := by
+            have h_in : br ∈ x.b.val.right := by rw [hb]; simp [Game.right]; exact hbr
+            exact (xL_x_xR x.b).2 br h_in
+          exact Game.lt_trans bl x.b br ⟨h_bl_lt_b, h_b_lt_br⟩
+
+  -- =========================================================
+  -- Part 2: Left and right options are surreal
+  -- =========================================================
+  · constructor
+    -- 2.1 Left options are Surreal
+    · intro L hL
+      simp [left, List.mem_append] at hL
+      rcases hL with ⟨al, hal, rfl⟩ | ⟨bl, hbl, rfl⟩
+      · -- al + b is Surreal (by IH)
+        unfold IsSurreal at sa
+        rcases sa with ⟨_, sa_L, _⟩
+        have s_al : IsSurreal al := by
+          apply sa_L al
+          rw [ha]; simp [Game.left]; exact hal
+        apply IH {a := ⟨al, s_al⟩, b := b}
+        simp [U]
+        apply add_lt_add_right
+        apply birthday_lt_left x.a.val al
+        rw [ha]; simp [Game.left]; exact hal
+      · -- a + bl is Surreal (by IH)
+        unfold IsSurreal at sb
+        rcases sb with ⟨_, sb_L, _⟩
+        have s_bl : IsSurreal bl := by
+          apply sb_L bl
+          rw [hb]; simp [Game.left]; exact hbl
+        apply IH {a := a, b := ⟨bl, s_bl⟩}
+        simp [U]
+        apply add_lt_add_left
+        apply birthday_lt_left x.b.val bl
+        rw [hb]; simp [Game.left]; exact hbl
+
+    -- 2.2 Right options are Surreal
+    · intro R hR
+      simp [right, List.mem_append] at hR
+      rcases hR with ⟨ar, har, rfl⟩ | ⟨br, hbr, rfl⟩
+      · -- ar + b is Surreal (by IH)
+        unfold IsSurreal at sa
+        rcases sa with ⟨_, _, sa_R⟩
+        have s_ar : IsSurreal ar := by
+          apply sa_R ar
+          rw [ha]; simp [Game.right]; exact har
+        apply IH {a := ⟨ar, s_ar⟩, b := b}
+        simp [U]
+        apply add_lt_add_right
+        apply birthday_lt_right x.a.val ar
+        rw [ha]; simp [Game.right]; exact har
+      · -- a + br is Surreal (by IH)
+        unfold IsSurreal at sb
+        rcases sb with ⟨_, _, sb_R⟩
+        have s_br : IsSurreal br := by
+          apply sb_R br
+          rw [hb]; simp [Game.right]; exact hbr
+        apply IH {a := a, b := ⟨br, s_br⟩}
+        simp [U]
+        apply add_lt_add_left
+        apply birthday_lt_right x.b.val br
+        rw [hb]; simp [Game.right]; exact hbr
+
+-------------------------------------------
+-------- Addition preserves surreal--------
+-------------------------------------------
+theorem Surreal.add_isSurreal (a b : Surreal) :
+  IsSurreal (a.val.add b.val) := by
+  let bi : BiSurreal := {a := a, b := b}
+  apply add_isSurreal1 bi
 
 set_option linter.unusedVariables false
 def Game.neg : Game → Game
@@ -348,11 +537,11 @@ theorem Game.neg_isSurreal (a : Surreal) :
   sorry
 
 -- Seems like these two proofs require x to be a surreal number
-theorem Game.add_neg (a : Game) :
-  (a.add (Game.neg a)).eq zero := by
+theorem Game.add_neg (a : Surreal) :
+  (a.val.add (Game.neg a)).eq zero := by
   sorry
 
-theorem Game.neg_add (a : Game) :
+theorem Game.neg_add (a : Surreal) :
   ((Game.neg a).add a).eq zero := by
   sorry
 

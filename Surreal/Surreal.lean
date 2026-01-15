@@ -258,6 +258,7 @@ lemma like_le (x y : Surreal) :
     contradiction
 
 
+-- The theorem below uses lawfulBEq on Game.eq
 theorem simplicity_left (x : Surreal) (l l' : Game)
   (hl' : l' ∈ x.left) (h_dom : l.lt l') : (x.val.remove_left l).eq x := by
   unfold eq
