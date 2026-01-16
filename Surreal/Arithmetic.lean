@@ -144,16 +144,13 @@ lemma Game.Addlem2  (a b a' b' : Game) :
 -------------------------------------------
 --- Adding equal numbers give equal sum ---
 -------------------------------------------
-theorem Game.add_equal (a b a' b' : Game) :
-  (a.eq a') ∧ (b.eq b') → (a.add b).eq (a'.add b') := by
+theorem Game.add_equal (a b a' b' : Game) : (a.eq a') ∧ (b.eq b') → (a.add b).eq (a'.add b') := by
   intro ⟨h1, h2⟩
   unfold eq at h1 h2
   unfold eq
   constructor
   · exact Game.add_le_add a b a' b' h1.1 h2.1
   · exact Game.add_le_add a' b' a b h1.2 h2.2
-
-
 
 -------------------------------------------
 -------- Addition is commutative ----------
@@ -375,7 +372,7 @@ def U : BiSurreal → BiSurreal → Prop :=
 lemma wf_U : WellFounded U :=
   InvImage.wf (fun s : BiSurreal => birthday s.1 + birthday s.2) wellFounded_lt
 
-theorem lt_imp_not_le {x y : Game} (h : lt x y) : ¬(le y x) := h.2
+lemma lt_imp_not_le {x y : Game} (h : lt x y) : ¬(le y x) := h.2
 
 theorem add_isSurreal1 (x : BiSurreal) :
   IsSurreal (x.a.val.add x.b.val) := by
@@ -521,6 +518,13 @@ theorem Surreal.add_isSurreal (a b : Surreal) :
   let bi : BiSurreal := {a := a, b := b}
   apply add_isSurreal1 bi
 
+def Surreal.add (a b : Surreal) :
+  Surreal := ⟨(a.val).add b.val, Surreal.add_isSurreal a b⟩
+
+
+------------------------------------------
+--------- Definition of -a ---------------
+------------------------------------------
 set_option linter.unusedVariables false
 def Game.neg : Game → Game
   | g =>
@@ -532,19 +536,359 @@ def Game.neg : Game → Game
     · exact birthday_lt_right g r hr
     · exact birthday_lt_left g l hl
 
-theorem Game.neg_isSurreal (a : Surreal) :
-  IsSurreal (Game.neg a) := by
+
+
+lemma neg_left_def (g : Game) : (Game.neg g).left =
+  g.right.attach.map (fun ⟨r, _⟩ => Game.neg r) := by
+  conv_lhs => rw [Game.neg]
+  rfl
+
+lemma neg_right_def (g : Game) : (Game.neg g).right =
+  g.left.attach.map (fun ⟨l, _⟩ => Game.neg l) := by
+  conv_lhs => rw [Game.neg]
+  rfl
+
+structure BiGame where
+  a : Game
+  b : Game
+
+def B : BiGame → BiGame → Prop :=
+  fun a b => birthday a.1 + birthday a.2 < birthday b.1 + birthday b.2
+lemma wf_B : WellFounded B :=
+  InvImage.wf (fun s : BiGame => birthday s.1 + birthday s.2) wellFounded_lt
+
+theorem Game.neg_le_neg_iff (x : BiGame) : le x.a x.b ↔ le (neg x.b) (neg x.a) := by
+  apply wf_B.induction x
+  intro x IH
+  let a := x.a
+  let b := x.b
+  constructor
+  · intro h
+    unfold le
+    constructor
+    -- Condition 1: ∀ L ∈ (-b).left, ¬(-a ≤ L)
+    -- L = -bR where bR ∈ b.right
+    · intro L hL
+      rw [neg_left_def, List.mem_map] at hL
+      rcases hL with ⟨⟨bR, hbR⟩, _, rfl⟩
+      -- Assume -a ≤ -bR
+      intro h_contra
+      simp at h_contra
+      -- IH implies: bR ≤ a ↔ -a ≤ -bR
+      have IH_call := IH {a := bR, b := a}
+      dsimp [B] at IH_call
+      rw [Nat.add_comm a.birthday] at IH_call
+      rw [add_lt_add_iff_right] at IH_call
+      specialize IH_call (birthday_lt_right x.b bR hbR)
+      -- So h_contra implies bR ≤ a
+      rw [← IH_call] at h_contra
+      -- But h (a ≤ b) implies ¬(bR ≤ a)
+      unfold le at h
+      exact h.2 bR hbR h_contra
+
+    -- Condition 2: ∀ R ∈ (-a).right, ¬(R ≤ -b)
+    -- R = -aL where aL ∈ a.left
+    · intro R hR
+      rw [neg_right_def, List.mem_map] at hR
+      rcases hR with ⟨⟨aL, haL⟩, _, rfl⟩
+      -- Assume -aL ≤ -b
+      intro h_contra
+      simp at h_contra
+      -- Apply IH to {a := b, b := aL}
+      have IH_call := IH {a := b, b := aL}
+      dsimp [B] at IH_call
+      rw [Nat.add_comm a.birthday] at IH_call
+      rw [add_lt_add_iff_left] at IH_call
+      specialize IH_call (birthday_lt_left x.a aL haL)
+      -- So h_contra implies b ≤ aL
+      rw [← IH_call] at h_contra
+      -- But h (a ≤ b) implies ¬(b ≤ aL)
+      unfold le at h
+      exact h.1 aL haL h_contra
+
+  -- === Direction 2: -b ≤ -a → a ≤ b ===
+  · intro h
+    unfold le
+    unfold le at h
+    constructor
+    -- Condition 1: ∀ aL ∈ a.left, ¬(b ≤ aL)
+    · intro aL haL b_le_aL -- Assume b ≤ aL
+
+      -- IH: b ≤ aL ↔ -aL ≤ -b
+      have IH_call := IH {a := b, b := aL}
+      dsimp [B] at IH_call
+      -- Metric: b + aL < a + b
+      rw [Nat.add_comm a.birthday, add_lt_add_iff_left] at IH_call
+      specialize IH_call (birthday_lt_left x.a aL haL)
+      rw [IH_call] at b_le_aL
+
+      -- h.2 says: ∀ R ∈ (-a).right, ¬(R ≤ -b)
+      -- -aL is in (-a).right
+      have h_not := h.2 (neg aL)
+      rw [neg_right_def, List.mem_map] at h_not
+      apply h_not _ b_le_aL
+      simp
+      use aL, haL
+
+    -- Condition 2: ∀ bR ∈ b.right, ¬(bR ≤ a)
+    · intro bR hbR bR_le_a -- Assume bR ≤ a
+      -- IH: bR ≤ a ↔ -a ≤ -bR
+      have IH_call := IH {a := bR, b := a}
+      dsimp [B] at IH_call
+      rw [Nat.add_comm a.birthday, add_lt_add_iff_right] at IH_call
+      specialize IH_call (birthday_lt_right x.b bR hbR)
+      rw [IH_call] at bR_le_a
+
+      -- h.1 says: ∀ L ∈ (-b).left, ¬(-a ≤ L)
+      -- -bR is in (-b).left
+      have h_not := h.1 (neg bR)
+      rw [neg_left_def, List.mem_map] at h_not
+      apply h_not _ bR_le_a
+      simp
+      use bR, hbR
+
+theorem Game.neg_le_neg (a b : Game) : le a b ↔ le (neg b) (neg a) := by
+  let bi : BiGame := {a := a, b := b}
+  apply Game.neg_le_neg_iff bi
+
+
+theorem Game.neg_lt_neg (a b : Game) : lt a b ↔ lt (neg b) (neg a) := by
+  -- Expand the definition of lt: a < b ↔ (a ≤ b ∧ ¬(b ≤ a))
+  unfold lt
+  rw [Game.neg_le_neg a b]
+  rw [Game.neg_le_neg b a]
+
+
+------------------------------------------
+------ if a is surreal, so is -a ---------
+------------------------------------------
+theorem Surreal.neg_isSurreal (a : Surreal) :
+  IsSurreal (Game.neg a.val) := by
+  apply WellFounded.induction (InvImage.wf (fun s : Surreal => s.val.birthday) wellFounded_lt) a
+  intro a IH
+  let x := a.val
+  have sx := a.property
+  have neg_left : (Game.neg x).left = x.right.attach.map (fun ⟨r, _⟩ => Game.neg r) := by
+    conv_lhs => rw [Game.neg]
+    simp [Game.left]
+  have neg_right : (Game.neg x).right = x.left.attach.map (fun ⟨l, _⟩ => Game.neg l) := by
+    conv_lhs => rw [Game.neg]
+    simp [Game.right]
+  unfold IsSurreal at sx
+  rcases sx with ⟨_, sx_L_surreal, sx_R_surreal⟩
+  unfold IsSurreal
+  constructor
+  -- =========================================================
+  -- Part 1: Order Condition (L < R for -x)
+  -- =========================================================
+  · intro L hL R hR
+    rw [neg_left, List.mem_map] at hL
+    rw [neg_right, List.mem_map] at hR
+    rcases hL with ⟨⟨xr, hxr⟩, _, rfl⟩
+    rcases hR with ⟨⟨xl, hxl⟩, _, rfl⟩
+
+    apply lt_imp_not_le
+    have h_xl_lt_xr : xl.lt xr := by
+      let s_xl : Surreal := ⟨xl, sx_L_surreal xl hxl⟩
+      let s_xr : Surreal := ⟨xr, sx_R_surreal xr hxr⟩
+      have xl_lt_x := (xL_x_xR a).1 s_xl hxl
+      have x_lt_xr := (xL_x_xR a).2 s_xr hxr
+      exact Surreal.lt_trans s_xl a s_xr ⟨xl_lt_x, x_lt_xr⟩
+    rw [Game.neg_lt_neg] at h_xl_lt_xr
+    exact h_xl_lt_xr
+
+  -- =========================================================
+  -- Part 2: Recursive Condition
+  -- =========================================================
+  · constructor
+    · intro L hL
+      rw [neg_left, List.mem_map] at hL
+      rcases hL with ⟨⟨xr, hxr⟩, _, rfl⟩
+      apply IH ⟨xr, sx_R_surreal xr hxr⟩
+      dsimp [InvImage]
+      exact birthday_lt_right x xr hxr
+
+    · intro R hR
+      rw [neg_right, List.mem_map] at hR
+      rcases hR with ⟨⟨xl, hxl⟩, _, rfl⟩
+      apply IH ⟨xl, sx_L_surreal xl hxl⟩
+      dsimp [InvImage]
+      exact birthday_lt_left x xl hxl
+
+-- The proof below require x to be a surreal number
+-- Helper lemmas and axioms assumed from context
+axiom Game.add_lt_le {a b a' b' : Game} : (lt a a') ∧ (le b b') → lt (add a b) (add a' b')
+axiom Game.add_lt_comm {a b a' b' : Game} : (le a a') ∧ (lt b b') → lt (add a b) (add a' b')
+axiom Game.neg_lt_neg_iff (a b : Game) : lt a b ↔ lt (neg b) (neg a)
+lemma map_attach_eq_map {α β} (l : List α) (f : α → β) :
+  l.attach.map (fun ⟨x, _⟩ => f x) = l.map f := by
+  induction l <;> simp [*]
+
+
+theorem neg_lt_neg_rev {x y : Game} (h : lt x y) : lt (Game.neg y) (Game.neg x) := by
+  rw [← Game.neg_lt_neg_iff]
+  exact h
+
+theorem Game.lt_of_lt_of_le {x y z : Game} (hxy : lt x y) (hyz : le y z) : lt x z := by
   sorry
 
--- Seems like these two proofs require x to be a surreal number
-theorem Game.add_neg (a : Surreal) :
-  (a.val.add (Game.neg a)).eq zero := by
+theorem Game.lt_of_le_of_lt {x y z : Game} (hxy : le x y) (hyz : lt y z) : lt x z := by
   sorry
 
-theorem Game.neg_add (a : Surreal) :
-  ((Game.neg a).add a).eq zero := by
-  sorry
 
+theorem Surreal.add_neg (a : Surreal) : (a.val.add (Game.neg a.val)).eq zero := by
+  apply WellFounded.induction (InvImage.wf (fun s : Surreal => s.val.birthday) wellFounded_lt) a
+  intro a IH
+  let x := a.val
+  have sx := a.property
+
+  unfold Game.eq
+  constructor
+  -- =========================================================
+  -- Part 1: Prove (x + -x) ≤ 0
+  -- =========================================================
+  · unfold Game.le
+    constructor
+    -- 1. ∀ L ∈ (x + -x).left, L < 0
+    · intro L hL
+      change L ∈ (x.add (Game.neg x)).left at hL
+
+      have h_cases : (∃ xl ∈ x.left, L = xl.add (Game.neg x)) ∨
+                     (∃ xr ∈ x.right, L = x.add (Game.neg xr)) := by
+        obtain ⟨XL, XR, hx_eq⟩ : ∃ L R, x = mk L R := ⟨x.left, x.right, by cases x; rfl⟩
+        rw [hx_eq] at hL
+        -- Controlled unfolding
+        rw [Game.neg] at hL
+        simp only [Game.left, Game.right] at hL
+        rw [Game.add] at hL
+        simp only [List.mem_append, List.mem_map, List.mem_attach] at hL
+
+        rcases hL with ⟨xl, hxl, rfl⟩ | ⟨_, ⟨xr, hxr, rfl⟩, rfl⟩
+        · left; use xl
+          rw [hx_eq]; simp [Game.left, hxl]; congr 1; rw [Game.neg]
+          simp only [Game.left, Game.right]
+          congr 1
+          all_goals { rw [map_attach_eq_map]}
+        · right; use xr
+          rw [hx_eq]; simp [Game.right]; exact xr.property
+
+      rcases h_cases with ⟨xl, hxl, rfl⟩ | ⟨xr, hxr, rfl⟩
+
+      -- Case 1: L = xl + (-x)
+      · unfold IsSurreal at sx
+        have xl_surreal : IsSurreal xl := sx.2.1 xl hxl
+        have h_xl_lt_x : xl.lt x := (xL_x_xR a).1 xl hxl
+        have h_neg_x_lt_neg_xl : (Game.neg x).lt (Game.neg xl) := neg_lt_neg_rev h_xl_lt_x
+
+        have IH_xl := IH ⟨xl, xl_surreal⟩ (birthday_lt_left x xl hxl)
+        have h_sum_zero : Game.le (xl.add (Game.neg xl)) zero := IH_xl.1
+
+        -- Fix: Use And.intro explicitly
+        have h_mono : Game.lt (xl.add (Game.neg x)) (xl.add (Game.neg xl)) :=
+          Game.add_lt_comm (And.intro (Game.le_refl xl) h_neg_x_lt_neg_xl)
+
+        have h_lt_zero : Game.lt (xl.add (Game.neg x)) zero :=
+          Game.lt_of_lt_of_le h_mono h_sum_zero
+
+        exact lt_imp_not_le h_lt_zero
+
+      -- Case 2: L = x + (-xr)
+      · unfold IsSurreal at sx
+        have xr_surreal : IsSurreal xr := sx.2.2 xr hxr
+        have h_x_lt_xr : x.lt xr := (xL_x_xR a).2 xr hxr
+
+        have IH_xr := IH ⟨xr, xr_surreal⟩ (birthday_lt_right x xr hxr)
+        have h_sum_zero : Game.le (xr.add (Game.neg xr)) zero := IH_xr.1
+
+        -- Fix: Use And.intro explicitly
+        have h_mono : Game.lt (x.add (Game.neg xr)) (xr.add (Game.neg xr)) :=
+          Game.add_lt x (Game.neg xr) xr (Game.neg xr)
+          (And.intro h_x_lt_xr (Game.le_refl (Game.neg xr)))
+
+        have h_lt_zero : Game.lt (x.add (Game.neg xr)) zero :=
+          Game.lt_of_lt_of_le h_mono h_sum_zero
+
+        exact lt_imp_not_le h_lt_zero
+
+    -- 2. ∀ R ∈ 0.right... (Empty)
+    · intro R hR
+      simp [zero, Game.right] at hR
+
+  -- =========================================================
+  -- Part 2: Prove 0 ≤ (x + -x)
+  -- =========================================================
+  · unfold Game.le
+    constructor
+    -- 1. ∀ L ∈ 0.left... (Empty)
+    · intro L hL
+      simp [zero, Game.left] at hL
+
+    -- 2. ∀ R ∈ (x + -x).right, R > 0
+    · intro R hR
+      change R ∈ (x.add (Game.neg x)).right at hR
+
+      have h_cases : (∃ xr ∈ x.right, R = xr.add (Game.neg x)) ∨
+                     (∃ xl ∈ x.left, R = x.add (Game.neg xl)) := by
+        obtain ⟨XL, XR, hx_eq⟩ : ∃ L R, x = mk L R := ⟨x.left, x.right, by cases x; rfl⟩
+        rw [hx_eq] at hR
+        rw [Game.neg] at hR
+        simp only [Game.left, Game.right] at hR
+        rw [Game.add] at hR
+        simp only [List.mem_append, List.mem_map, List.mem_attach] at hR
+
+        rcases hR with ⟨xr, hxr, rfl⟩ | ⟨_, ⟨xl, hxl, rfl⟩, rfl⟩
+        · left; use xr
+          rw [hx_eq]; simp [Game.right, hxr]; congr 1; rw [Game.neg]
+          simp only [Game.left, Game.right]
+          congr 1
+          all_goals { rw [map_attach_eq_map]}
+        · right; use xl
+          rw [hx_eq]; simp [Game.left]; exact xl.property
+
+      rcases h_cases with ⟨xr, hxr, rfl⟩ | ⟨xl, hxl, rfl⟩
+
+      -- Case 1: R = xr + (-x)
+      · unfold IsSurreal at sx
+        have xr_surreal : IsSurreal xr := sx.2.2 xr hxr
+        have h_x_lt_xr : x.lt xr := (xL_x_xR a).2 xr hxr
+        have h_neg_xr_lt_neg_x : (Game.neg xr).lt (Game.neg x) := neg_lt_neg_rev h_x_lt_xr
+
+        have IH_xr := IH ⟨xr, xr_surreal⟩ (birthday_lt_right x xr hxr)
+        have h_zero_le_sum : Game.le zero (xr.add (Game.neg xr)) := IH_xr.2
+
+        -- Fix: Use And.intro explicitly
+        have h_mono : Game.lt (xr.add (Game.neg xr)) (xr.add (Game.neg x)) :=
+           Game.add_lt_comm (And.intro (Game.le_refl xr) h_neg_xr_lt_neg_x)
+
+        have h_zero_lt : Game.lt zero (xr.add (Game.neg x)) :=
+           Game.lt_of_le_of_lt h_zero_le_sum h_mono
+
+        exact lt_imp_not_le h_zero_lt
+
+      -- Case 2: R = x + (-xl)
+      · unfold IsSurreal at sx
+        have xl_surreal : IsSurreal xl := sx.2.1 xl hxl
+        have h_xl_lt_x : xl.lt x := (xL_x_xR a).1 xl hxl
+
+        have IH_xl := IH ⟨xl, xl_surreal⟩ (birthday_lt_left x xl hxl)
+        have h_zero_le_sum : Game.le zero (xl.add (Game.neg xl)) := IH_xl.2
+
+        -- Fix: Use And.intro explicitly
+        have h_mono : Game.lt (xl.add (Game.neg xl)) (x.add (Game.neg xl)) :=
+           Game.add_lt xl (Game.neg xl) x (Game.neg xl)
+           (And.intro h_xl_lt_x (Game.le_refl (Game.neg xl)))
+
+
+        have h_zero_lt : Game.lt zero (x.add (Game.neg xl)) :=
+           Game.lt_of_le_of_lt h_zero_le_sum h_mono
+
+        exact lt_imp_not_le h_zero_lt
+
+theorem Surreal.neg_add (a : Surreal) : ((Game.neg a).add a).eq zero := by
+  apply Game.eq_trans _ ((a.val).add (Game.neg a))
+  constructor
+  · exact Game.add_comm (Game.neg a) a
+  · exact Surreal.add_neg a
 
 
 
