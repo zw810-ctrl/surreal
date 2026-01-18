@@ -259,6 +259,17 @@ by
   apply le_trans1 tri habc
 
 
+theorem Game.eq_trans : ∀ x y z : Game , (eq x y) ∧ (eq y z) → eq x z :=
+by
+  intro x y z habc
+  have eq_xy : eq x y := habc.1
+  have eq_yz : eq y z := habc.2
+  unfold eq
+  constructor
+  · exact le_trans x y z ⟨eq_xy.1,eq_yz.1⟩
+  · exact le_trans z y x ⟨eq_yz.2,eq_xy.2⟩
+
+
 theorem Game.lt_trans (x y z : Game) : x.lt y ∧ y.lt z → x.lt z := by
   intro h
   have h_xy := h.1
@@ -279,6 +290,23 @@ theorem Game.lt_trans (x y z : Game) : x.lt y ∧ y.lt z → x.lt z := by
       exact ⟨h_contra, h_x_le_y⟩
     have h_z_not_le_y := h_yz.2
     contradiction
+
+theorem Game.lt_of_lt_of_le {x y z : Game} (hxy : lt x y) (hyz : le y z) : lt x z := by
+  unfold lt
+  constructor
+  · exact le_trans x y z ⟨hxy.1, hyz⟩
+  · intro h_contra
+    have h_y_le_x : y.le x := by exact le_trans y z x ⟨hyz, h_contra⟩
+    exact hxy.2 h_y_le_x
+
+theorem Game.lt_of_le_of_lt {x y z : Game} (hxy : le x y) (hyz : lt y z) : lt x z := by
+  unfold lt
+  constructor
+  · exact le_trans x y z ⟨hxy, hyz.1⟩
+  · intro h_contra
+    have h_z_le_y : z.le y := by exact le_trans z x y ⟨h_contra, hxy⟩
+    exact hyz.2 h_z_le_y
+
 
 
 #eval [zero, one].erase one
