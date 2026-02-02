@@ -13,9 +13,9 @@ def IsSurreal (g : Game) : Prop :=
 termination_by g.birthday
 decreasing_by
   · have xl : g_l ∈ g.left := by assumption
-    apply birthday_lt_left g g_l xl
+    apply birthday_lt_left xl
   · have xr : g_r ∈ g.right := by assumption
-    apply birthday_lt_right g g_r xr
+    apply birthday_lt_right xr
 
 
 def Surreal := { g : Game // IsSurreal g }
@@ -44,12 +44,12 @@ def sr_zero : Surreal := ⟨zero, isSurreal_zero⟩
 --- the well-definedness of ≤ on games implies the well-definedness of ≤ on surreal numbers
 theorem Surreal.le_refl (x : Surreal) : Surreal.le x x := by
   unfold Surreal.le
-  apply Game.le_refl x.val
+  apply Game.le_congr
 
 theorem Surreal.le_trans (x y z : Surreal) :
   (Surreal.le x y) ∧ (Surreal.le y z) → Surreal.le x z := by
   unfold Surreal.le
-  exact Game.le_trans x.val y.val z.val
+  exact Game.le_trans
 
 def S : Surreal → Surreal → Prop := fun y x => birthday y < birthday x
 lemma wf_S : WellFounded S :=  by
@@ -76,7 +76,7 @@ theorem xL_x_xR (x : Surreal) :
         unfold le at y_contra
         have h_contra := y_contra.1 y_l (by simp [left]; exact h_yl)
         unfold S at IH
-        have h1 := IH ⟨y_l, yl_surreal⟩ (birthday_lt_left y y_l h_yl)
+        have h1 := IH ⟨y_l, yl_surreal⟩ (birthday_lt_left h_yl)
         have h2 := h1.1 y_ll (by simp [Surreal.left]; exact h_yll)
         unfold lt at h2
         have h3 := h2.1
@@ -93,7 +93,7 @@ theorem xL_x_xR (x : Surreal) :
       intro y_le_y_l
       unfold le at y_le_y_l
       let h_contra := y_le_y_l.1 y_l (by simp [left]; exact h_yl)
-      have h : le y_l y_l := by exact le_refl y_l
+      have h : le y_l y_l := by exact Game.le_congr
       contradiction
   · intro y_r h_yr
     unfold lt
@@ -115,7 +115,7 @@ theorem xL_x_xR (x : Surreal) :
         unfold le at y_contra
         have h_contra := y_contra.2 y_r (by simp [right]; exact h_yr)
         unfold S at IH
-        have h1 := IH ⟨y_r, yr_surreal⟩ (birthday_lt_right y y_r h_yr)
+        have h1 := IH ⟨y_r, yr_surreal⟩ (birthday_lt_right h_yr)
         have h2 := h1.2 y_rr (by simp [Surreal.right]; exact h_yrr)
         unfold lt at h2
         have h3 := h2.1
@@ -124,7 +124,7 @@ theorem xL_x_xR (x : Surreal) :
       intro y_r_le_y
       unfold le at y_r_le_y
       let h_contra := y_r_le_y.2 y_r (by simp [right]; exact h_yr)
-      have h : le y_r y_r := by exact le_refl y_r
+      have h : le y_r y_r := by exact Game.le_congr
       contradiction
 
 theorem Surreal.totality (x y : Surreal) : Surreal.le x y ∨ Surreal.le y x := by
@@ -139,13 +139,13 @@ theorem Surreal.totality (x y : Surreal) : Surreal.le x y ∨ Surreal.le y x := 
     · -- case: ∃ xl ∈ x.left, y ≤ xl
       rcases h_left with ⟨xl, h_xl, h_le⟩
       have xl_le_x := ((xL_x_xR x).1 xl h_xl).1
-      have y_le_x := Game.le_trans y xl x ⟨h_le, xl_le_x⟩
+      have y_le_x := Game.le_trans ⟨h_le, xl_le_x⟩
       exact y_le_x
   | inr h_right =>
     · -- case: ∃ yr ∈ y.right, yr ≤ x
       rcases h_right with ⟨yr, h_yr, h_le⟩
       have y_le_yr := ((xL_x_xR y).2 yr h_yr).1
-      have x_le_y := Game.le_trans y yr x ⟨y_le_yr, h_le⟩
+      have x_le_y := Game.le_trans ⟨y_le_yr, h_le⟩
       exact x_le_y
 
 theorem not_le_iff_lt (x y : Surreal) : x.lt y ↔ ¬(y.le x) := by
@@ -186,186 +186,7 @@ theorem Surreal.lt_trans (x y z : Surreal) :
     have h_z_not_le_y := h_yz.2
     contradiction
 
-theorem left_removal_IsSurreal
-    (x : Surreal) (l : Game) : IsSurreal (x.val.remove_left l) := by
-    have h1 : (x.val.remove_left l).left ⊆ x.left := remove_left_subset_left x.val l
-    have h2 : (x.val.remove_left l).right = x.right := remove_left_eq_right x.val l
-    unfold IsSurreal
-    constructor
-    · intro yl h_yl yr h_yr
-      apply h1 at h_yl
-      rw [h2] at h_yr
-      have h_surreal := (x.property)
-      unfold IsSurreal at h_surreal
-      exact h_surreal.1 yl h_yl yr h_yr
-    · constructor
-      · intro xl h_xl
-        apply h1 at h_xl
-        have h_surreal := (x.property)
-        unfold IsSurreal at h_surreal
-        exact h_surreal.2.1 xl h_xl
-      · intro xr h_xr
-        rw [h2] at h_xr
-        have h_surreal := (x.property)
-        unfold IsSurreal at h_surreal
-        exact h_surreal.2.2 xr h_xr
 
-theorem right_removal_IsSurreal
-    (x : Surreal) (r : Game) : IsSurreal (x.val.remove_right r) := by
-    have h1 : (x.val.remove_right r).left = x.left := by rfl
-    have h2 : (x.val.remove_right r).right ⊆ x.right := remove_right_subset_right x.val r
-    unfold IsSurreal
-    constructor
-    · intro yl h_yl yr h_yr
-      rw [h1] at h_yl
-      apply h2 at h_yr
-      have h_surreal := (x.property)
-      unfold IsSurreal at h_surreal
-      exact h_surreal.1 yl h_yl yr h_yr
-    · constructor
-      · intro xl h_xl
-        rw [h1] at h_xl
-        have h_surreal := (x.property)
-        unfold IsSurreal at h_surreal
-        exact h_surreal.2.1 xl h_xl
-      · intro xr h_xr
-        apply h2 at h_xr
-        have h_surreal := (x.property)
-        unfold IsSurreal at h_surreal
-        exact h_surreal.2.2 xr h_xr
-
-lemma like_le (x y : Surreal) :
-  (∀ xl ∈ x.left, ∃ yl ∈ y.left, xl.le yl) ∧
-  (∀ yr ∈ y.right, ∃ xr ∈ x.right, xr.le yr) → x.le y := by
-  intro h
-  unfold Surreal.le
-  unfold le
-  constructor
-  · intro xl h_xl
-    by_contra h_le
-    have h1 := h.1 xl h_xl
-    rcases h1 with ⟨yl, h_yl, xl_le_yl⟩
-    have y_le_yl := le_trans y xl yl ⟨h_le, xl_le_yl⟩
-    have y_nleq_yl := ((xL_x_xR y).1 yl h_yl).2
-    contradiction
-  · intro yr h_yr
-    by_contra h_le
-    have h2 := h.2 yr h_yr
-    rcases h2 with ⟨xr, h_xr, xr_le_yr⟩
-    have xr_le_x := le_trans xr yr x ⟨xr_le_yr, h_le⟩
-    have xr_nleq_x := ((xL_x_xR x).2 xr h_xr).2
-    contradiction
-
--- The theorem below uses lawfulBEq on Game.eq
-theorem simplicity_left (x : Surreal) (l l' : Game)
-  (hl' : l' ∈ x.left) (h_dom : l.lt l') : (x.val.remove_left l).eq x := by
-  unfold eq
-  let y : Surreal := ⟨x.val.remove_left l, left_removal_IsSurreal x l⟩
-  constructor
-  -- Prove `(x.remove_left l) ≤ x` by like_le
-  · apply like_le y x
-    constructor
-    · intro yl h_yl
-      use yl
-      constructor
-      · have h1 : (x.val.remove_left l).left ⊆ x.left := remove_left_subset_left x.val l
-        have h2 : (x.val.remove_left l).left = y.left := by rfl
-        rw [h2] at h1
-        apply h1 at h_yl
-        exact h_yl
-      · exact le_refl yl
-    · intro xr h_xr
-      use xr
-      constructor
-      · have h1 : (x.val.remove_left l).right = x.right := remove_left_eq_right x.val l
-        have h2: y.right = (x.val.remove_left l).right := by rfl
-        rw [h2]
-        exact h_xr
-      · exact le_refl xr
-  -- Prove `x ≤ (x.remove_left l)` by like_le
-  · apply like_le x y
-    constructor
-    · intro xl h_xl
-      by_cases h_case : xl = l
-      · -- case: xl = l, take yl = l'
-        rw [h_case]
-        use l'
-        constructor
-        · have h : l' ∈ (x.val.remove_left l).left :=
-          remove_left_dom_remains x.val l l' hl' h_dom
-          exact h
-        · exact h_dom.1
-      · -- case: xl ≠ l, take yl = xl
-        use xl
-        constructor
-        · have h : xl ∈ (x.val.remove_left l).left :=
-          remove_left_contains_all_but x.val l xl h_xl h_case
-          exact h
-        · exact le_refl xl
-    · intro yr h_yr
-      use yr
-      constructor
-      · have h1 : (x.val.remove_left l).right = x.right := remove_left_eq_right x.val l
-        have h2: y.right = (x.val.remove_left l).right := by rfl
-        rw [h2] at h_yr
-        exact h_yr
-      · exact le_refl yr
-
-theorem simplicity_right (x : Surreal) (r r' : Game)
-  (hr' : r' ∈ x.right) (h_dom : r'.lt r) : (x.val.remove_right r).eq x := by
-  unfold eq
-  let y : Surreal := ⟨x.val.remove_right r, right_removal_IsSurreal x r⟩
-  constructor
-  -- Prove `(x.remove_right r) ≤ x` by like_le
-  · apply like_le y x
-    constructor
-    · intro yl h_yl
-      use yl
-      constructor
-      · have h1 : (x.val.remove_right r).left = x.left := by rfl
-        have h2 : (x.val.remove_right r).left = y.left := by rfl
-        rw [h2] at h1
-        rw [h1.symm]
-        exact h_yl
-      · exact le_refl yl
-    · intro xr h_xr
-      by_cases h_case : xr = r
-      · -- case: xr = r, take yr = r'
-        rw [h_case]
-        use r'
-        constructor
-        · have h : r' ∈ (x.val.remove_right r).right :=
-          remove_right_dom_remains x r' r hr' h_dom
-          exact h
-        · exact h_dom.1
-      · -- case: xr ≠ r, take yr = xr
-        use xr
-        constructor
-        · have h : xr ∈ (x.val.remove_right r).right :=
-          remove_right_contains_all_but x.val xr r h_xr h_case
-          exact h
-        · exact le_refl xr
-
-  -- Prove `x ≤ (x.remove_right r)` by like_le
-  · apply like_le x y
-    constructor
-    · intro xl h_xl
-      use xl
-      constructor
-      · have h1 : (x.val.remove_right r).left = x.left := by rfl
-        have h2: y.left = (x.val.remove_right r).left := by rfl
-        rw [h2]
-        exact h_xl
-      · exact le_refl xl
-    · intro yr h_yr
-      use yr
-      constructor
-      · have h1 : (x.val.remove_right r).right ⊆ x.right := remove_right_subset_right x.val r
-        have h2 : (x.val.remove_right r).right = y.right := by rfl
-        rw [h2] at h1
-        apply h1 at h_yr
-        exact h_yr
-      · exact le_refl yr
 
 structure BiSurreal where
   a : Surreal

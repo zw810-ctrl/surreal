@@ -13,10 +13,10 @@ import Surreal.addition
 instance : Setoid Game where
   r a b := a.le b ∧ b.le a
   iseqv := {
-    refl  := fun x => ⟨Game.le_refl x, Game.le_refl x⟩
+    refl  := fun _ => ⟨Game.le_congr, Game.le_congr⟩
     symm  := fun h => ⟨h.2, h.1⟩
-    trans := fun {x y z} h1 h2 =>
-    ⟨Game.le_trans x y z ⟨h1.1, h2.1⟩, Game.le_trans z y x ⟨h2.2, h1.2⟩⟩}
+    trans := fun h1 h2 =>
+    ⟨Game.le_trans ⟨h1.1, h2.1⟩, Game.le_trans ⟨h2.2, h1.2⟩⟩}
 
 def Surreal.Equiv (g h : Surreal) : Prop :=
   le g h ∧ le h g
@@ -26,7 +26,7 @@ instance Surreal.setoid : Setoid Surreal where
   iseqv := {
     refl  := by
       intro x;
-      exact x_eq_x x;
+      exact Game.eq_congr;
     symm  := by
       intro x y h;
       unfold Surreal.Equiv at *;
@@ -49,19 +49,19 @@ theorem Game.le_congr_propext : ∀ (a₁ a₂ b₁ b₂ : Surreal),
   · -- Direction 1: `le a₁ a₂ → le b₁ b₂`
     intro h_a1_a2
     have h_b1_a2 : le b₁ a₂ := by
-      apply Game.le_trans b₁ a₁ a₂
+      apply Game.le_trans
       exact ⟨h_a.2, h_a1_a2⟩
     have h_b1_b2 : le b₁ b₂ := by
-      apply Game.le_trans b₁ a₂ b₂
+      apply Game.le_trans
       exact ⟨h_b1_a2, b_h.1⟩
     exact h_b1_b2
   · -- Direction 2: `le b₁ b₂ → le a₁ a₂`
     intro h_b1_b2
     have h_a1_b2 : le a₁ b₂ := by
-      apply Game.le_trans a₁ b₁ b₂
+      apply Game.le_trans
       exact ⟨h_a.1, h_b1_b2⟩
     have h_a1_a2 : le a₁ a₂ := by
-      apply Game.le_trans a₁ b₂ a₂
+      apply Game.le_trans
       exact ⟨h_a1_b2, b_h.2⟩
     exact h_a1_a2
 
@@ -111,12 +111,12 @@ noncomputable instance : LinearOrder SurrealNumber where
     intro qx
     refine Quotient.inductionOn qx ?_
     intro x
-    exact (x_eq_x x).1
+    exact (Game.eq_congr).1
   le_trans := by
     intro qa qb qc
     refine Quotient.inductionOn₃ qa qb qc ?_
     intro a b c h_ab h_bc
-    exact Game.le_trans a b c ⟨h_ab, h_bc⟩
+    exact Game.le_trans ⟨h_ab, h_bc⟩
   le_antisymm := by
     intro qa qb
     refine Quotient.inductionOn₂ qa qb ?_
@@ -180,7 +180,7 @@ noncomputable instance : AddCommGroup SurrealNumber where
     intro a b
     apply Quotient.sound
     change Game.eq (Game.add a.val b.val) (Game.add b.val a.val)
-    exact Game.add_comm a.val b.val
+    exact Game.add_comm
 
   neg_add_cancel := by
     intro qa
@@ -199,13 +199,12 @@ noncomputable instance : IsOrderedAddMonoid SurrealNumber where
       change Game.le (Game.add c_val.val a_val.val) (Game.add c_val.val b_val.val)
       apply Game.add_le_add
       constructor
-      · exact Game.le_refl c_val.val
+      · exact Game.le_congr
       · exact h_ab
 
 
-example (a b : SurrealNumber) : |a + b| ≤ |a| + |b| := by
+example {a b : SurrealNumber} : |a + b| ≤ |a| + |b| := by
   exact abs_add_le a b
 
-example (a b c : SurrealNumber) (h : a ≤ b) : a - c ≤ b - c := by
+example {a b c : SurrealNumber} (h : a ≤ b) : a - c ≤ b - c := by
   apply sub_le_sub_right h
-
