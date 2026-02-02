@@ -42,11 +42,11 @@ def sr_zero : Surreal := ⟨zero, isSurreal_zero⟩
 #check sr_zero.property -- IsSurreal sr_zero
 
 --- the well-definedness of ≤ on games implies the well-definedness of ≤ on surreal numbers
-theorem Surreal.le_refl (x : Surreal) : Surreal.le x x := by
+theorem Surreal.le_refl {x : Surreal} : Surreal.le x x := by
   unfold Surreal.le
   apply Game.le_congr
 
-theorem Surreal.le_trans (x y z : Surreal) :
+theorem Surreal.le_trans {x y z : Surreal} :
   (Surreal.le x y) ∧ (Surreal.le y z) → Surreal.le x z := by
   unfold Surreal.le
   exact Game.le_trans
@@ -57,7 +57,7 @@ lemma wf_S : WellFounded S :=  by
 
 -- Prove that for any surreal number x = {xl ∈ XL | xr ∈ XR}, xl < x and x < xr
 -- The proof requires the fact that x is surreal.
-theorem xL_x_xR (x : Surreal) :
+theorem xL_x_xR {x : Surreal} :
   (∀ x_l ∈ x.left, lt x_l x) ∧ (∀ x_r ∈ x.right, lt x x_r) := by
   apply wf_S.induction x
   intro y IH
@@ -127,7 +127,7 @@ theorem xL_x_xR (x : Surreal) :
       have h : le y_r y_r := by exact Game.le_congr
       contradiction
 
-theorem Surreal.totality (x y : Surreal) : Surreal.le x y ∨ Surreal.le y x := by
+theorem Surreal.totality {x y : Surreal} : Surreal.le x y ∨ Surreal.le y x := by
   rw [or_iff_not_imp_left]
   unfold le
   nth_rw 1 [Game.le]
@@ -138,17 +138,17 @@ theorem Surreal.totality (x y : Surreal) : Surreal.le x y ∨ Surreal.le y x := 
   | inl h_left =>
     · -- case: ∃ xl ∈ x.left, y ≤ xl
       rcases h_left with ⟨xl, h_xl, h_le⟩
-      have xl_le_x := ((xL_x_xR x).1 xl h_xl).1
+      have xl_le_x := ((xL_x_xR).1 xl h_xl).1
       have y_le_x := Game.le_trans ⟨h_le, xl_le_x⟩
       exact y_le_x
   | inr h_right =>
     · -- case: ∃ yr ∈ y.right, yr ≤ x
       rcases h_right with ⟨yr, h_yr, h_le⟩
-      have y_le_yr := ((xL_x_xR y).2 yr h_yr).1
+      have y_le_yr := ((xL_x_xR).2 yr h_yr).1
       have x_le_y := Game.le_trans ⟨y_le_yr, h_le⟩
       exact x_le_y
 
-theorem not_le_iff_lt (x y : Surreal) : x.lt y ↔ ¬(y.le x) := by
+theorem not_le_iff_lt {x y : Surreal} : x.lt y ↔ ¬(y.le x) := by
   constructor
   · -- Goal 1 : lt x y → ¬(le y x)
     intro h_lt
@@ -160,12 +160,11 @@ theorem not_le_iff_lt (x y : Surreal) : x.lt y ↔ ¬(y.le x) := by
     unfold Surreal.lt
     constructor
     · -- Goal 1 : le x y
-      exact (Surreal.totality y x).resolve_left h_not_le
+      exact (Surreal.totality).resolve_left h_not_le
     · -- Goal 2 : ¬(le y x)
       exact h_not_le
 
-theorem Surreal.lt_trans (x y z : Surreal) :
-  x.lt y ∧ y.lt z → x.lt z := by
+theorem Surreal.lt_trans {x y z : Surreal} : x.lt y ∧ y.lt z → x.lt z := by
   intro h
   have h_xy := h.1
   have h_yz := h.2
@@ -174,19 +173,17 @@ theorem Surreal.lt_trans (x y z : Surreal) :
   · -- Goal 1: le x z
     have h_x_le_y := h_xy.1
     have h_y_le_z := h_yz.1
-    apply Surreal.le_trans x y z
+    apply Surreal.le_trans
     exact ⟨h_x_le_y, h_y_le_z⟩
 
   · -- Goal 2: ¬(le z x)
     intro h_contra --assume le z x
     have h_x_le_y := h_xy.1
     have h_z_le_y : z.le y := by
-      apply Surreal.le_trans z x y
+      apply Surreal.le_trans
       exact ⟨h_contra, h_x_le_y⟩
     have h_z_not_le_y := h_yz.2
     contradiction
-
-
 
 structure BiSurreal where
   a : Surreal

@@ -11,15 +11,14 @@ import Surreal.surreal
 import Surreal.addition
 
 instance : Setoid Game where
-  r a b := a.le b ∧ b.le a
+  r a b := Game.eq a b
   iseqv := {
     refl  := fun _ => ⟨Game.le_congr, Game.le_congr⟩
     symm  := fun h => ⟨h.2, h.1⟩
     trans := fun h1 h2 =>
     ⟨Game.le_trans ⟨h1.1, h2.1⟩, Game.le_trans ⟨h2.2, h1.2⟩⟩}
 
-def Surreal.Equiv (g h : Surreal) : Prop :=
-  le g h ∧ le h g
+def Surreal.Equiv (g h : Surreal) : Prop := le g h ∧ le h g
 
 instance Surreal.setoid : Setoid Surreal where
   r := Surreal.Equiv
@@ -35,15 +34,15 @@ instance Surreal.setoid : Setoid Surreal where
       intro x y z h_xy h_yz;
       unfold Surreal.Equiv at *;
       constructor;
-      · exact le_trans x y z ⟨h_xy.1, h_yz.1⟩;
-      · exact le_trans z y x ⟨h_yz.2, h_xy.2⟩;
+      · exact le_trans ⟨h_xy.1, h_yz.1⟩;
+      · exact le_trans ⟨h_yz.2, h_xy.2⟩;
   }
 
 def SurrealNumber := Quotient Surreal.setoid
 
-theorem Game.le_congr_propext : ∀ (a₁ a₂ b₁ b₂ : Surreal),
-  a₁ ≈ b₁ → a₂ ≈ b₂ → (le a₁ a₂ = le b₁ b₂) := by
-  intro a₁ a₂ b₁ b₂ h_a b_h
+theorem Game.le_congr_propext {a₁ a₂ b₁ b₂ : Surreal} :
+  (a₁ ≈ b₁) → (a₂ ≈ b₂) → (le a₁ a₂ = le b₁ b₂) := by
+  intro h_a b_h
   apply propext
   constructor
   · -- Direction 1: `le a₁ a₂ → le b₁ b₂`
@@ -76,17 +75,13 @@ theorem Surreal.add_congr (a₁ a₂ : Surreal) (h₁ : a₁ ≈ a₂) (b₁ b�
 def SurrealNumber.add : SurrealNumber → SurrealNumber → SurrealNumber :=
   Quotient.map₂ Surreal.add Surreal.add_congr
 
-instance : Add SurrealNumber where
-  add := SurrealNumber.add
+instance : Add SurrealNumber where add := SurrealNumber.add
 
-instance : Zero SurrealNumber where
-  zero := ⟦sr_zero⟧
+instance : Zero SurrealNumber where zero := ⟦sr_zero⟧
 
-instance : Add SurrealNumber where
-  add := SurrealNumber.add
+instance : Add SurrealNumber where add := SurrealNumber.add
 
-def Surreal.neg (s : Surreal) : Surreal :=
-  ⟨Game.neg s.val, Surreal.neg_isSurreal s⟩
+def Surreal.neg (s : Surreal) : Surreal := ⟨Game.neg s.val, Surreal.neg_isSurreal s⟩
 
 theorem Surreal.neg_congr (a b : Surreal) (h : a ≈ b) : Surreal.neg a ≈ Surreal.neg b := by
   constructor
@@ -104,9 +99,8 @@ def SurrealNumber.neg : SurrealNumber → SurrealNumber :=
 
 instance : Neg SurrealNumber where neg := SurrealNumber.neg
 
-
 noncomputable instance : LinearOrder SurrealNumber where
-  le := Quotient.lift₂ Surreal.le (fun _ _ _ _ => Game.le_congr_propext _ _ _ _ )
+  le := Quotient.lift₂ Surreal.le (fun _ _ _ _ => Game.le_congr_propext )
   le_refl := by
     intro qx
     refine Quotient.inductionOn qx ?_
@@ -127,7 +121,7 @@ noncomputable instance : LinearOrder SurrealNumber where
     intro qa qb
     induction qa using Quotient.inductionOn
     induction qb using Quotient.inductionOn
-    exact Surreal.totality _ _
+    exact Surreal.totality
   toDecidableLE := Classical.decRel _
 
 noncomputable instance : AddCommGroup SurrealNumber where
@@ -202,9 +196,6 @@ noncomputable instance : IsOrderedAddMonoid SurrealNumber where
       · exact Game.le_congr
       · exact h_ab
 
+example {a b : SurrealNumber} : |a + b| ≤ |a| + |b| := by exact abs_add_le a b
 
-example {a b : SurrealNumber} : |a + b| ≤ |a| + |b| := by
-  exact abs_add_le a b
-
-example {a b c : SurrealNumber} (h : a ≤ b) : a - c ≤ b - c := by
-  apply sub_le_sub_right h
+example {a b c : SurrealNumber} (h : a ≤ b) : a - c ≤ b - c := by apply sub_le_sub_right h

@@ -7,8 +7,6 @@ inductive Game where
   | mk : List Game → List Game → Game
 deriving BEq, Repr
 
-
-
 open Game
 
 def Game.left (g : Game) : List Game :=
@@ -54,7 +52,7 @@ lemma elt_leq_max (a : List ℕ) (s : ℕ) (h : s ∈ a) : s ≤ a.maximum.getD 
       simp [Option.getD_some]
       exact List.le_of_mem_argmax h max
 
-lemma birthday_lt_left {g l : Game} (h : l ∈ g.left) :
+theorem Game.birthday_lt_left {g l : Game} (h : l ∈ g.left) :
     birthday l < birthday g := by
   cases g with
   | mk L R =>
@@ -70,7 +68,7 @@ lemma birthday_lt_left {g l : Game} (h : l ∈ g.left) :
       apply elt_leq_max b l.birthday h_mem_b
     linarith
 
-lemma birthday_lt_right {g r : Game} (h : r ∈ g.right) :
+theorem Game.birthday_lt_right {g r : Game} (h : r ∈ g.right) :
     birthday r < birthday g := by
   cases g with
   | mk L R =>
@@ -178,14 +176,12 @@ theorem Game.le_congr {x : Game} : le x x := by
   intro x IH
   unfold le
   unfold R at IH
-
   constructor
   · intro l xl h_contra
     unfold le at h_contra
     have h_neg_le := h_contra.1 l (by simp[left]; exact xl)
     have h_le: le l l := IH l (birthday_lt_left xl)
     contradiction
-
   · intro r hr h_contra
     unfold le at h_contra
     have h_neg_le := h_contra.2 r (by simp[right]; exact hr)
@@ -200,9 +196,9 @@ theorem Game.eq_congr {x : Game} : eq x x := by
 
 
 structure TriGame where
-  a : Game  -- The first natural number, named 'a'
-  b : Game  -- The second natural number, named 'b'
-  c : Game  -- The third natural number, named 'c'
+  a : Game
+  b : Game
+  c : Game
 
 def T : TriGame → TriGame → Prop :=
   fun a b => birthday a.1 + birthday a.2 + birthday a.3 < birthday b.1 + birthday b.2 + birthday b.3

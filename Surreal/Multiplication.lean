@@ -249,19 +249,15 @@ lemma Game.bigame_mul_comm (x : BiGame) : ((x.a).mul x.b).eq ((x.b).mul x.a) := 
             apply List.mem_map_of_mem; exact h_la
         · dsimp
           apply mul_term_comm_aux
-          · rw [ha]
-            have IH_call := IH {a := x.a, b := lb}
+          · have IH_call := IH {a := x.a, b := lb}
             dsimp [B] at IH_call
             rw [add_lt_add_iff_left] at IH_call
             specialize IH_call (birthday_lt_left h_b)
-            rw [← ha]
             exact IH_call
-          · rw [hb]
-            have IH_call := IH {a := la, b := x.b}
+          · have IH_call := IH {a := la, b := x.b}
             dsimp [B] at IH_call
             rw [add_lt_add_iff_right] at IH_call
             specialize IH_call (birthday_lt_left h_a)
-            rw [← hb]
             exact IH_call
           · have IH_call := IH {a := la, b := lb}
             dsimp [B] at IH_call
@@ -293,19 +289,15 @@ lemma Game.bigame_mul_comm (x : BiGame) : ((x.a).mul x.b).eq ((x.b).mul x.a) := 
             apply List.mem_map_of_mem; exact h_ra
         · dsimp
           apply mul_term_comm_aux
-          · rw [ha];
-            have IH_call := IH {a := x.a, b := rb}
+          · have IH_call := IH {a := x.a, b := rb}
             dsimp [B] at IH_call
             rw [add_lt_add_iff_left] at IH_call
             specialize IH_call (birthday_lt_right h_b)
-            rw [← ha]
             exact IH_call
-          · rw [hb];
-            have IH_call := IH {a := ra, b := x.b}
+          · have IH_call := IH {a := ra, b := x.b}
             dsimp [B] at IH_call
             rw [add_lt_add_iff_right] at IH_call
             specialize IH_call (birthday_lt_right h_a)
-            rw [← hb]
             exact IH_call
           · have IH_call := IH {a := ra, b := rb}
             dsimp [B] at IH_call
@@ -342,19 +334,15 @@ lemma Game.bigame_mul_comm (x : BiGame) : ((x.a).mul x.b).eq ((x.b).mul x.a) := 
         · apply Game.eq_refl
           dsimp
           apply mul_term_comm_aux
-          · rw [ha]
-            have IH_call := IH {a := x.a, b := lb}
+          · have IH_call := IH {a := x.a, b := lb}
             dsimp [B] at IH_call
             rw [add_lt_add_iff_left] at IH_call
             specialize IH_call (birthday_lt_left h_b)
-            rw [← ha]
             exact IH_call
-          · rw [hb]
-            have IH_call := IH {a := la, b := x.b}
+          · have IH_call := IH {a := la, b := x.b}
             dsimp [B] at IH_call
             rw [add_lt_add_iff_right] at IH_call
             specialize IH_call (birthday_lt_left h_a)
-            rw [← hb]
             exact IH_call
           · have IH_call := IH {a := la, b := lb}
             dsimp [B] at IH_call
@@ -380,19 +368,15 @@ lemma Game.bigame_mul_comm (x : BiGame) : ((x.a).mul x.b).eq ((x.b).mul x.a) := 
         · apply Game.eq_refl
           dsimp
           apply mul_term_comm_aux
-          · rw [ha];
-            have IH_call := IH {a := x.a, b := rb}
+          · have IH_call := IH {a := x.a, b := rb}
             dsimp [B] at IH_call
             rw [add_lt_add_iff_left] at IH_call
             specialize IH_call (birthday_lt_right h_b)
-            rw [← ha]
             exact IH_call
-          · rw [hb];
-            have IH_call := IH {a := ra, b := x.b}
+          · have IH_call := IH {a := ra, b := x.b}
             dsimp [B] at IH_call
             rw [add_lt_add_iff_right] at IH_call
             specialize IH_call (birthday_lt_right h_a)
-            rw [← hb]
             exact IH_call
           · have IH_call := IH {a := ra, b := rb}
             dsimp [B] at IH_call
@@ -431,22 +415,17 @@ lemma Game.bigame_mul_comm (x : BiGame) : ((x.a).mul x.b).eq ((x.b).mul x.a) := 
           · rw [ha, hb]
             apply List.mem_map_of_mem
             exact h_la
-
         · dsimp
           apply mul_term_comm_aux
-          · rw [ha]
-            have IH_call := IH {a := x.a, b := rb}
+          · have IH_call := IH {a := x.a, b := rb}
             dsimp [B] at IH_call
             rw [add_lt_add_iff_left] at IH_call
             specialize IH_call (birthday_lt_right h_b)
-            rw [← ha]
             exact IH_call
-          · rw [hb]
-            have IH_call := IH {a := la, b := x.b}
+          · have IH_call := IH {a := la, b := x.b}
             dsimp [B] at IH_call
             rw [add_lt_add_iff_right] at IH_call
             specialize IH_call (birthday_lt_left h_a)
-            rw [← hb]
             exact IH_call
           · have IH_call := IH {a := la, b := rb}
             dsimp [B] at IH_call
@@ -473,22 +452,17 @@ lemma Game.bigame_mul_comm (x : BiGame) : ((x.a).mul x.b).eq ((x.b).mul x.a) := 
             apply List.mem_map_of_mem; exact h_lb
           · rw [ha, hb]
             apply List.mem_map_of_mem; exact h_ra
-
         · dsimp
           apply mul_term_comm_aux
-          · rw [ha]
-            have IH_call := IH {a := x.a, b := lb}
+          · have IH_call := IH {a := x.a, b := lb}
             dsimp [B] at IH_call
             rw [add_lt_add_iff_left] at IH_call
             specialize IH_call (birthday_lt_left h_b)
-            rw [← ha]
             exact IH_call
-          · rw [hb]
-            have IH_call := IH {a := ra, b := x.b}
+          · have IH_call := IH {a := ra, b := x.b}
             dsimp [B] at IH_call
             rw [add_lt_add_iff_right] at IH_call
             specialize IH_call (birthday_lt_right h_a)
-            rw [← hb]
             exact IH_call
           · have IH_call := IH {a := ra, b := lb}
             dsimp [B] at IH_call
@@ -525,21 +499,17 @@ lemma Game.bigame_mul_comm (x : BiGame) : ((x.a).mul x.b).eq ((x.b).mul x.a) := 
           · rw [ha, hb]; apply List.mem_map_of_mem; exact h_lb
         · dsimp
           apply mul_term_comm_aux
-          · rw [hb]
-            have IH_call := IH {a := x.b, b := ra}
+          · have IH_call := IH {a := x.b, b := ra}
             dsimp [B] at IH_call
             rw [Nat.add_comm x.a.birthday x.b.birthday] at IH_call
             rw [add_lt_add_iff_left] at IH_call
             specialize IH_call (birthday_lt_right h_a)
-            rw [← hb]
             exact IH_call
-          · rw [ha]
-            have IH_call := IH {a := lb, b := x.a}
+          · have IH_call := IH {a := lb, b := x.a}
             dsimp [B] at IH_call
             rw [Nat.add_comm x.a.birthday x.b.birthday] at IH_call
             rw [add_lt_add_iff_right] at IH_call
             specialize IH_call (birthday_lt_left h_b)
-            rw [← ha]
             exact IH_call
           · have IH_call := IH {a := lb, b := ra}
             dsimp [B] at IH_call
@@ -566,21 +536,17 @@ lemma Game.bigame_mul_comm (x : BiGame) : ((x.a).mul x.b).eq ((x.b).mul x.a) := 
           · rw [ha, hb]; apply List.mem_map_of_mem; exact h_rb
         · dsimp
           apply mul_term_comm_aux
-          · rw [hb]
-            have IH_call := IH {a := x.b, b := la}
+          · have IH_call := IH {a := x.b, b := la}
             dsimp [B] at IH_call
             rw [Nat.add_comm x.a.birthday x.b.birthday] at IH_call
             rw [add_lt_add_iff_left] at IH_call
             specialize IH_call (birthday_lt_left h_a)
-            rw [← hb]
             exact IH_call
-          · rw [ha]
-            have IH_call := IH {a := rb, b := x.a}
+          · have IH_call := IH {a := rb, b := x.a}
             dsimp [B] at IH_call
             rw [Nat.add_comm x.a.birthday x.b.birthday] at IH_call
             rw [add_lt_add_iff_right] at IH_call
             specialize IH_call (birthday_lt_right h_b)
-            rw [← ha]
             exact IH_call
           · have IH_call := IH {a := rb, b := la}
             dsimp [B] at IH_call

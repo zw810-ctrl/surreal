@@ -559,10 +559,10 @@ theorem add_isSurreal1 (x : BiSurreal) : IsSurreal (x.a.val.add x.b.val) := by
         · -- al < ar (because a is Surreal)
           have h_al_lt_a : al.lt x.a.val := by
             have h_in : al ∈ x.a.val.left := by rw [ha]; simp [Game.left]; exact hal
-            exact (xL_x_xR x.a).1 al h_in
+            exact (xL_x_xR).1 al h_in
           have h_a_lt_ar : x.a.val.lt ar := by
             have h_in : ar ∈ x.a.val.right := by rw [ha]; simp [Game.right]; exact har
-            exact (xL_x_xR x.a).2 ar h_in
+            exact (xL_x_xR).2 ar h_in
           exact Game.lt_trans ⟨h_al_lt_a, h_a_lt_ar⟩
         · -- b ≤ b
           exact Game.le_congr
@@ -572,10 +572,10 @@ theorem add_isSurreal1 (x : BiSurreal) : IsSurreal (x.a.val.add x.b.val) := by
         constructor
         · -- al < a → al ≤ a
           have h_in : al ∈ x.a.val.left := by rw [ha]; simp [Game.left]; exact hal
-          exact ((xL_x_xR x.a).1 al h_in)
+          exact ((xL_x_xR).1 al h_in)
         · -- b < br
           have h_in : br ∈ x.b.val.right := by rw [hb]; simp [Game.right]; exact hbr
-          exact ((xL_x_xR x.b).2 br h_in).1
+          exact ((xL_x_xR).2 br h_in).1
 
     -- BRANCH 2: L = a + bl
     · -- Now split on where the Right option R comes from
@@ -586,10 +586,10 @@ theorem add_isSurreal1 (x : BiSurreal) : IsSurreal (x.a.val.add x.b.val) := by
         constructor
         · -- a < ar
           have h_in : ar ∈ x.a.val.right := by rw [ha]; simp [Game.right]; exact har
-          exact (xL_x_xR x.a).2 ar h_in
+          exact (xL_x_xR).2 ar h_in
         · -- bl < b → bl ≤ b
           have h_in : bl ∈ x.b.val.left := by rw [hb]; simp [Game.left]; exact hbl
-          exact ((xL_x_xR x.b).1 bl h_in).1
+          exact ((xL_x_xR).1 bl h_in).1
 
       -- Case 2.2: a + bl < a + br
       · apply Game.add_le_lt
@@ -599,10 +599,10 @@ theorem add_isSurreal1 (x : BiSurreal) : IsSurreal (x.a.val.add x.b.val) := by
         · -- bl < br (because b is Surreal)
           have h_bl_lt_b : bl.lt x.b.val := by
             have h_in : bl ∈ x.b.val.left := by rw [hb]; simp [Game.left]; exact hbl
-            exact (xL_x_xR x.b).1 bl h_in
+            exact (xL_x_xR).1 bl h_in
           have h_b_lt_br : x.b.val.lt br := by
             have h_in : br ∈ x.b.val.right := by rw [hb]; simp [Game.right]; exact hbr
-            exact (xL_x_xR x.b).2 br h_in
+            exact (xL_x_xR).2 br h_in
           exact Game.lt_trans ⟨h_bl_lt_b, h_b_lt_br⟩
 
   -- =========================================================
@@ -622,7 +622,7 @@ theorem add_isSurreal1 (x : BiSurreal) : IsSurreal (x.a.val.add x.b.val) := by
         apply IH {a := ⟨al, s_al⟩, b := b}
         simp [U]
         apply add_lt_add_right
-        apply birthday_lt_left
+        apply Game.birthday_lt_left
         rw [ha]; simp [Game.left]; exact hal
       · -- a + bl is Surreal (by IH)
         unfold IsSurreal at sb
@@ -633,7 +633,7 @@ theorem add_isSurreal1 (x : BiSurreal) : IsSurreal (x.a.val.add x.b.val) := by
         apply IH {a := a, b := ⟨bl, s_bl⟩}
         simp [U]
         apply add_lt_add_left
-        apply birthday_lt_left
+        apply Game.birthday_lt_left
         rw [hb]; simp [Game.left]; exact hbl
 
     -- 2.2 Right options are Surreal
@@ -649,7 +649,7 @@ theorem add_isSurreal1 (x : BiSurreal) : IsSurreal (x.a.val.add x.b.val) := by
         apply IH {a := ⟨ar, s_ar⟩, b := b}
         simp [U]
         apply add_lt_add_right
-        apply birthday_lt_right
+        apply Game.birthday_lt_right
         rw [ha]; simp [Game.right]; exact har
       · -- a + br is Surreal (by IH)
         unfold IsSurreal at sb
@@ -660,7 +660,7 @@ theorem add_isSurreal1 (x : BiSurreal) : IsSurreal (x.a.val.add x.b.val) := by
         apply IH {a := a, b := ⟨br, s_br⟩}
         simp [U]
         apply add_lt_add_left
-        apply birthday_lt_right
+        apply Game.birthday_lt_right
         rw [hb]; simp [Game.right]; exact hbr
 
 -------------------------------------------
@@ -722,7 +722,7 @@ theorem bigame_neg_le_neg (x : BiGame) : Game.le x.a x.b ↔
       dsimp [B] at IH_call
       rw [Nat.add_comm a.birthday] at IH_call
       rw [add_lt_add_iff_right] at IH_call
-      specialize IH_call (birthday_lt_right hbR)
+      specialize IH_call (Game.birthday_lt_right hbR)
       -- So h_contra implies bR ≤ a
       rw [← IH_call] at h_contra
       -- But h (a ≤ b) implies ¬(bR ≤ a)
@@ -742,7 +742,7 @@ theorem bigame_neg_le_neg (x : BiGame) : Game.le x.a x.b ↔
       dsimp [B] at IH_call
       rw [Nat.add_comm a.birthday] at IH_call
       rw [add_lt_add_iff_left] at IH_call
-      specialize IH_call (birthday_lt_left haL)
+      specialize IH_call (Game.birthday_lt_left haL)
       -- So h_contra implies b ≤ aL
       rw [← IH_call] at h_contra
       -- But h (a ≤ b) implies ¬(b ≤ aL)
@@ -762,7 +762,7 @@ theorem bigame_neg_le_neg (x : BiGame) : Game.le x.a x.b ↔
       dsimp [B] at IH_call
       -- Metric: b + aL < a + b
       rw [Nat.add_comm a.birthday, add_lt_add_iff_left] at IH_call
-      specialize IH_call (birthday_lt_left haL)
+      specialize IH_call (Game.birthday_lt_left haL)
       rw [IH_call] at b_le_aL
 
       -- h.2 says: ∀ R ∈ (-a).right, ¬(R ≤ -b)
@@ -779,7 +779,7 @@ theorem bigame_neg_le_neg (x : BiGame) : Game.le x.a x.b ↔
       have IH_call := IH {a := bR, b := a}
       dsimp [B] at IH_call
       rw [Nat.add_comm a.birthday, add_lt_add_iff_right] at IH_call
-      specialize IH_call (birthday_lt_right hbR)
+      specialize IH_call (Game.birthday_lt_right hbR)
       rw [IH_call] at bR_le_a
 
       -- h.1 says: ∀ L ∈ (-b).left, ¬(-a ≤ L)
@@ -851,9 +851,9 @@ theorem Surreal.neg_isSurreal (a : Surreal) :
     have h_xl_lt_xr : xl.lt xr := by
       let s_xl : Surreal := ⟨xl, sx_L_surreal xl hxl⟩
       let s_xr : Surreal := ⟨xr, sx_R_surreal xr hxr⟩
-      have xl_lt_x := (xL_x_xR a).1 s_xl hxl
-      have x_lt_xr := (xL_x_xR a).2 s_xr hxr
-      exact Surreal.lt_trans s_xl a s_xr ⟨xl_lt_x, x_lt_xr⟩
+      have xl_lt_x := (xL_x_xR).1 s_xl hxl
+      have x_lt_xr := (xL_x_xR).2 s_xr hxr
+      exact Surreal.lt_trans ⟨xl_lt_x, x_lt_xr⟩
     rw [Game.neg_lt_neg] at h_xl_lt_xr
     exact h_xl_lt_xr
 
@@ -866,14 +866,14 @@ theorem Surreal.neg_isSurreal (a : Surreal) :
       rcases hL with ⟨⟨xr, hxr⟩, _, rfl⟩
       apply IH ⟨xr, sx_R_surreal xr hxr⟩
       dsimp [InvImage]
-      exact birthday_lt_right hxr
+      exact Game.birthday_lt_right hxr
 
     · intro R hR
       rw [neg_right, List.mem_map] at hR
       rcases hR with ⟨⟨xl, hxl⟩, _, rfl⟩
       apply IH ⟨xl, sx_L_surreal xl hxl⟩
       dsimp [InvImage]
-      exact birthday_lt_left hxl
+      exact Game.birthday_lt_left hxl
 
 
 lemma map_attach_eq_map {α β} (l : List α) (f : α → β) :
